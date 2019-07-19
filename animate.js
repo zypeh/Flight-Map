@@ -1,8 +1,17 @@
 'use strict';
 
-var origin = [103.989441, 1.359167]; // Singapore Changi Airport
+const urlParams = new URLSearchParams(window.location.search);
+var origin_lng = urlParams.get('src_lng');
+var origin_lat = urlParams.get('src_lat');
+
+var destination_lng = urlParams.get("dst_lng");
+var destination_lat = urlParams.get("dst_lat");
+
+var origin = [origin_lng, origin_lat];
+var destination = [destination_lng, destination_lat];
+// var origin = [103.989441, 1.359167]; // Singapore Changi Airport
 // var destination = [144.844788, -34.663712]; // Melbourne Airport
-var destination = [116.597504, 40.072498]; // Beijing Airport
+// var destination = [116.597504, 40.072498]; // Beijing Airport
 
 mapboxgl.accessToken = 'pk.eyJ1IjoicmV2bW9uLXp5IiwiYSI6ImNqeTlseGNtYzA1aXIzbXNhenl6Zm5vNmYifQ.fknPvSAb-4s4nLICGoG5OQ';
 var map = new mapboxgl.Map({
@@ -10,7 +19,7 @@ var map = new mapboxgl.Map({
     style: 'mapbox://styles/mapbox/light-v9',
     center: origin,
     // center: [(origin[0] + destination[0]) / 2, (origin[1] + destination[1]) / 2],
-    zoom: 5
+    zoom: 4
 });
 
 var size = 100;
@@ -89,7 +98,43 @@ var pulsingDot = {
         return true;
     }
 };
+var pulsingGreenDot = {
+    width: size,
+    height: size,
+    data: new Uint8Array(size * size * 4),
 
+    onAdd: function () {
+        var canvas = document.createElement('canvas');
+        canvas.width = this.width;
+        canvas.height = this.height;
+        this.context = canvas.getContext('2d');
+    },
+
+    render: function () {
+        var duration = 1000;
+        var t = (performance.now() % duration) / duration;
+
+        var radius = size / 2 * 0.3;
+        var outerRadius = size / 2 * 0.7 * t + radius;
+        var context = this.context;
+
+        // draw outer circle
+        context.clearRect(0, 0, this.width, this.height);
+        context.beginPath();
+        context.arc(this.width / 2, this.height / 2, outerRadius, 0, Math.PI * 2);
+        context.fillStyle = 'rgba(9, 188, 138,' + (1 - t) + ')';
+        context.fill();
+
+        // update this image's data with data from the canvas
+        this.data = context.getImageData(0, 0, this.width, this.height).data;
+
+        // keep the map repainting
+        map.triggerRepaint();
+
+        // return `true` to let the map know that the image was updated
+        return true;
+    }
+};
 // A simple line from origin to destination.
 var route = {
     "type": "FeatureCollection",
@@ -192,7 +237,7 @@ map.on('load', function () {
         "source": "travelled_route",
         "type": "line",
         "paint": {
-            "line-width": 2.1,
+            "line-width": 2.2,
             "line-color": "#FF9F00"
         }
     });
@@ -262,7 +307,7 @@ map.on('load', function () {
         // Calculate the arc of the travelled route using the same function that generate the
         // route.
         var travelled_arc = [];
-        for (var i = 0; i < lineDistance; i += lineDistance / (steps - counter)) {
+        for (var i = 0; i < lineDistance; i += lineDistance / counter) {
             var segment = turf.along(travelled_route.features[0], i, 'kilometers');
             travelled_arc.push(segment.geometry.coordinates);
         }
@@ -273,17 +318,13 @@ map.on('load', function () {
         map.getSource('point').setData(point);
         map.getSource('travelled_route').setData(travelled_route);
 
-        map.flyTo({ center: point.features[0].geometry.coordinates });
-        
         // Request the next frame of animation so long the end has not been reached.
         if (counter < steps) {
+            map.flyTo({ center: point.features[0].geometry.coordinates });
             requestAnimationFrame(animate);
-        } else {
-            return
         }
 
         counter = counter + 1;
-
     }
 
     // Start the animation.
