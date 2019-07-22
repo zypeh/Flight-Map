@@ -1,11 +1,22 @@
 'use strict';
 
 const urlParams = new URLSearchParams(window.location.search);
+var flightNo = urlParams.get('flight_no');
+
 var origin_lng = urlParams.get('src_lng');
 var origin_lat = urlParams.get('src_lat');
+var origin_name = urlParams.get('src_name');
 
 var destination_lng = urlParams.get("dst_lng");
 var destination_lat = urlParams.get("dst_lat");
+var destination_name = urlParams.get("dst_name");
+
+if (!!flightNo)
+    document.getElementById('flight-no').innerHTML = flightNo
+if (!!origin_name)
+    document.getElementById('src-name').innerHTML = origin_name
+if (!!destination_name)
+    document.getElementById('dst-name').innerHTML = destination_name
 
 var origin = [origin_lng, origin_lat];
 var destination = [destination_lng, destination_lat];
