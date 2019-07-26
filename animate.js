@@ -5,14 +5,14 @@ var flightNo = urlParams.get('flight_no');
 var initDateTime = urlParams.get('init_dateTime');
 var estDateTime = urlParams.get('est_dateTime');
 
-var origin_lng = urlParams.get('src_lng');
-var origin_lat = urlParams.get('src_lat');
+var origin_lng = parseFloat(urlParams.get('src_lng') + "");
+var origin_lat = parseFloat(urlParams.get('src_lat') + "");
 var origin_name = urlParams.get('src_name');
 var origin_country = urlParams.get('src_country');
 var origin_dateTime = urlParams.get('src_time');
 
-var destination_lng = urlParams.get("dst_lng");
-var destination_lat = urlParams.get("dst_lat");
+var destination_lng = parseFloat(urlParams.get("dst_lng") + "");
+var destination_lat = parseFloat(urlParams.get("dst_lat") + "");
 var destination_name = urlParams.get("dst_name");
 var destination_country = urlParams.get('dst_country');
 var destination_dateTime = urlParams.get('dst_time');
