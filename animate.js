@@ -2,15 +2,23 @@
 
 const urlParams = new URLSearchParams(window.location.search);
 var flightNo = urlParams.get('flight_no');
+var initDateTime = urlParams.get('init_dateTime');
 var estDateTime = urlParams.get('est_dateTime');
 
 var origin_lng = urlParams.get('src_lng');
 var origin_lat = urlParams.get('src_lat');
 var origin_name = urlParams.get('src_name');
+var origin_country = urlParams.get('src_country');
+var origin_dateTime = urlParams.get('src_time');
 
 var destination_lng = urlParams.get("dst_lng");
 var destination_lat = urlParams.get("dst_lat");
 var destination_name = urlParams.get("dst_name");
+var destination_country = urlParams.get('dst_country');
+var destination_dateTime = urlParams.get('dst_time');
+
+var date = urlParams.get('date');
+var class_name = urlParams.get('class_name');
 
 if (!!flightNo)
     document.getElementById('flight-no').innerHTML = flightNo
@@ -18,6 +26,18 @@ if (!!origin_name)
     document.getElementById('src-name').innerHTML = origin_name
 if (!!destination_name)
     document.getElementById('dst-name').innerHTML = destination_name
+if (!!origin_country)
+    document.getElementById('src-country-code').innerHTML = origin_country
+if (!!destination_country)
+    document.getElementById('dst-country-code').innerHTML = destination_country
+if (!!origin_dateTime)
+    document.getElementById('src-time').innerHTML = origin_dateTime
+if (!!destination_dateTime)
+    document.getElementById('dst-time').innerHTML = destination_dateTime
+if (!!date)
+    document.getElementById('date').innerHTML = date
+if (!!class_name)
+    document.getElementById('class-name').innerHTML = class_name
 
 var origin = [origin_lng, origin_lat];
 var destination = [destination_lng, destination_lat];
@@ -30,7 +50,8 @@ var map = new mapboxgl.Map({
     container: 'map',
     style: 'mapbox://styles/mapbox/light-v9',
     center: origin,
-    zoom: 4
+    zoom: 4,
+    attributionControl: false,
 });
 
 var size = 100;
@@ -212,7 +233,6 @@ route.features[0].geometry.coordinates = arc;
 // Used to increment the value of the point measurement against the route.
 var counter = 0;
 var duration = (estDateTime / Date.now()) - 1;
-
 if (duration < 0) {
     // the flight is completed
     counter = steps - 1 - 1 // this minus one is for the animate() function
@@ -222,10 +242,11 @@ if (duration < 0) {
         container: 'map',
         style: 'mapbox://styles/mapbox/light-v9',
         center: route.features[0].geometry.coordinates[counter],
-        zoom: 4
+        zoom: 4,
+        attributionControl: false,
     });
 } else {
-    counter = parseInt(((duration * 800 * 100) - 1) * steps, 10)
+    counter = parseInt((duration * 800 * 100) * steps, 10)
     // the flight is incomplete
     point.features[0].geometry.coordinates = route.features[0].geometry.coordinates[counter];
     travelled_route.features[0].geometry.coordinates[1] = route.features[0].geometry.coordinates[counter];
@@ -233,7 +254,8 @@ if (duration < 0) {
         container: 'map',
         style: 'mapbox://styles/mapbox/light-v9',
         center: route.features[0].geometry.coordinates[counter],
-        zoom: 4
+        zoom: 4,
+        attributionControl: false,
     });
 }
 
@@ -253,16 +275,6 @@ map.on('load', function () {
         "type": "geojson",
         "data": point
     });
-
-    map.addSource('src_point', {
-        "type": "geojson",
-        "data": point
-    });
-    map.addSource('dst_point', {
-        "type": "geojson",
-        "data": point
-    });
-
 
     map.addSource('travelled_route', {
         "type": "geojson",
@@ -290,7 +302,7 @@ map.on('load', function () {
     });
 
     map.addLayer({
-        "id": "origin",
+        "id": "origin_point",
         "type": "symbol",
         "source": {
             "type": "geojson",
@@ -311,7 +323,7 @@ map.on('load', function () {
     })
 
     map.addLayer({
-        "id": "destination",
+        "id": "destination_point",
         "type": "symbol",
         "source": {
             "type": "geojson",

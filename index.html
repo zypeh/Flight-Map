@@ -34,12 +34,70 @@
             background: #00266B;
         }
 
+        .container-box,
         .container {
             max-width: 400px;
             margin: 0 auto;
             display: flex;
             justify-content: space-between;
             padding: 16px;
+        }
+
+        .container-box {
+            padding: 16px 16px 0px 16px;
+        }
+
+        .box {
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.2);
+            width: 100%;
+            display: flex;
+            align-items: center;
+            padding: 11px;
+        }
+
+        .date {
+            font-size: 13px;
+            background: #00266B;
+            border-radius: 3px;
+            width: 45px;
+            height: 100%;
+            line-height: 1.1;
+            color: #fff;
+        }
+
+        .info {
+            font-size: 14px;
+            color: #fff;
+            max-width: 70px;
+            display: flex;
+            flex-direction: column;
+            margin: 0 16px;
+        }
+
+        .info h2 {
+            line-height: 1;
+            margin: 0;
+        }
+
+        .line-white {
+            width: 100%;
+            height: 2px;
+            border-bottom: 2px solid #00266b;
+            position: relative;
+            border-bottom: 2px solid #fff;
+        }
+
+        i.arrow-right-white {
+            border: solid #fff;
+            border-width: 0 2px 2px 0px;
+            display: inline-block;
+            padding: 2px;
+            transform: rotate(-45deg);
+            -webkit-transform: rotate(-45deg);
+            position: absolute;
+            bottom: -4px;
+            right: 0px;
         }
 
         h1 {
@@ -59,18 +117,34 @@
     </style>
     <div id='map'></div>
     <div class='overlay'>
-        <div class="container">
+        <div class="container-box">
+            <div class="box">
+                <div class="date">
+                    <div id="date" style="margin: 6px;"></div>
+                </div>
+                <div class="info">
+                    <p id="src-name"></p>
+                    <h2 id="src-country-code"></h2>
+                    <p id="src-time"></p>
+                </div>
+                <div class="line-white" style="max-width: 40px">
+                    <i class="arrow-right-white"></i>
+                </div>
+                <div class="info">
+                    <p id="dst-name"></p>
+                    <h2 id="dst-country-code"></h2>
+                    <p id="dst-time"></p>
+                </div>
+            </div>
+        </div>
+        <div class="container" style="justify-content: space-around">
             <div>
                 <h1>FLIGHT NO</h1>
                 <p id="flight-no"></p>
             </div>
             <div>
-                <h1>ORIGIN</h1>
-                <p id="src-name"></p>
-            </div>
-            <div>
-                <h1>DESTINATION</h1>
-                <p id="dst-name"></p>
+                <h1>CLASS</h1>
+                <p id="class-name"></p>
             </div>
         </div>
     </div>
