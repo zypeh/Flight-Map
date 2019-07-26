@@ -2,6 +2,7 @@
 
 const urlParams = new URLSearchParams(window.location.search);
 var flightNo = urlParams.get('flight_no');
+var estDateTime = urlParams.get('est_dateTime');
 
 var origin_lng = urlParams.get('src_lng');
 var origin_lat = urlParams.get('src_lat');
@@ -29,7 +30,6 @@ var map = new mapboxgl.Map({
     container: 'map',
     style: 'mapbox://styles/mapbox/light-v9',
     center: origin,
-    // center: [(origin[0] + destination[0]) / 2, (origin[1] + destination[1]) / 2],
     zoom: 4
 });
 
@@ -211,10 +211,36 @@ route.features[0].geometry.coordinates = arc;
 
 // Used to increment the value of the point measurement against the route.
 var counter = 0;
+var duration = (estDateTime / Date.now()) - 1;
+
+if (duration < 0) {
+    // the flight is completed
+    counter = steps - 1 - 1 // this minus one is for the animate() function
+    point.features[0].geometry.coordinates = route.features[0].geometry.coordinates[counter];
+    travelled_route.features[0].geometry.coordinates[1] = route.features[0].geometry.coordinates[counter];
+    map = new mapboxgl.Map({
+        container: 'map',
+        style: 'mapbox://styles/mapbox/light-v9',
+        center: route.features[0].geometry.coordinates[counter],
+        zoom: 4
+    });
+} else {
+    counter = parseInt(((duration * 800 * 100) - 1) * steps, 10)
+    // the flight is incomplete
+    point.features[0].geometry.coordinates = route.features[0].geometry.coordinates[counter];
+    travelled_route.features[0].geometry.coordinates[1] = route.features[0].geometry.coordinates[counter];
+    map = new mapboxgl.Map({
+        container: 'map',
+        style: 'mapbox://styles/mapbox/light-v9',
+        center: route.features[0].geometry.coordinates[counter],
+        zoom: 4
+    });
+}
 
 map.on('load', function () {
     // Add a image
     map.addImage('marker-point', circleDot, { pixelRatio: 2});
+    map.addImage('marker-point-dst', circleDot, { pixelRatio: 2});
     map.addImage('beacon-point', pulsingDot, { pixelRatio: 2});
 
     // Add a source and layer displaying a point which will be animated in a circle.
@@ -227,6 +253,16 @@ map.on('load', function () {
         "type": "geojson",
         "data": point
     });
+
+    map.addSource('src_point', {
+        "type": "geojson",
+        "data": point
+    });
+    map.addSource('dst_point', {
+        "type": "geojson",
+        "data": point
+    });
+
 
     map.addSource('travelled_route', {
         "type": "geojson",
@@ -254,7 +290,7 @@ map.on('load', function () {
     });
 
     map.addLayer({
-        "id": "destination",
+        "id": "origin",
         "type": "symbol",
         "source": {
             "type": "geojson",
@@ -265,6 +301,27 @@ map.on('load', function () {
                     "geometry": {
                         "type": "Point",
                         "coordinates": origin,
+                    }
+                }]
+            }
+        },
+        "layout": {
+            "icon-image": "marker-point"
+        }
+    })
+
+    map.addLayer({
+        "id": "destination",
+        "type": "symbol",
+        "source": {
+            "type": "geojson",
+            "data": {
+                "type": "FeatureCollection",
+                "features": [{
+                    "type": "Feature",
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": destination,
                     }
                 }]
             }
@@ -331,8 +388,10 @@ map.on('load', function () {
 
         // Request the next frame of animation so long the end has not been reached.
         if (counter < steps) {
-            map.flyTo({ center: point.features[0].geometry.coordinates });
-            requestAnimationFrame(animate);
+            sleep(1).then(function () {
+                map.flyTo({ center: point.features[0].geometry.coordinates });
+                requestAnimationFrame(animate);
+            });
         }
 
         counter = counter + 1;
@@ -341,3 +400,7 @@ map.on('load', function () {
     // Start the animation.
     animate(counter);
 });
+
+function sleep(ms) {
+    return new Promise(function (resolve) { return setTimeout(resolve, ms) });
+};
