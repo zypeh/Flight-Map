@@ -41,6 +41,7 @@ if (!!class_name)
 
 var origin = [origin_lng, origin_lat];
 var destination = [destination_lng, destination_lat];
+
 // var origin = [103.989441, 1.359167]; // Singapore Changi Airport
 // var destination = [144.844788, -34.663712]; // Melbourne Airport
 // var destination = [116.597504, 40.072498]; // Beijing Airport
@@ -232,10 +233,16 @@ route.features[0].geometry.coordinates = arc;
 
 // Used to increment the value of the point measurement against the route.
 var counter = 0;
-var duration = (estDateTime / Date.now()) - 1;
-if (duration < 0) {
-    // the flight is completed
-    counter = steps - 1 - 1 // this minus one is for the animate() function
+var delta = (estDateTime - initDateTime);
+var fligntDurationSecond = 3 * 60; // 3 minutes
+var stepPerSecond = steps / (delta / fligntDurationSecond);
+var planeTick = fligntDurationSecond * 1000 / steps;
+
+var timeNow = Date.now()
+var flightHadFliedSecond = (timeNow > initDateTime) ? (timeNow - initDateTime) : 0;
+
+if (flightHadFliedSecond > 0 && flightHadFliedSecond < delta) {
+    counter = parseInt(stepPerSecond * flightHadFliedSecond)
     point.features[0].geometry.coordinates = route.features[0].geometry.coordinates[counter];
     travelled_route.features[0].geometry.coordinates[1] = route.features[0].geometry.coordinates[counter];
     map = new mapboxgl.Map({
@@ -245,9 +252,8 @@ if (duration < 0) {
         zoom: 4,
         attributionControl: false,
     });
-} else {
-    counter = parseInt((duration * 800 * 100) * steps, 10)
-    // the flight is incomplete
+} else if (flightHadFliedSecond >= delta) {
+    counter = steps - 1 - 1; // this minus one is for the animate() function
     point.features[0].geometry.coordinates = route.features[0].geometry.coordinates[counter];
     travelled_route.features[0].geometry.coordinates[1] = route.features[0].geometry.coordinates[counter];
     map = new mapboxgl.Map({
@@ -371,6 +377,9 @@ map.on('load', function () {
     });
 
     function animate() {
+        if (Date.now() < initDateTime) {
+            return
+        }
         // Update point geometry to a new position based on counter denoting
         // the index to access the arc.
         point.features[0].geometry.coordinates = route.features[0].geometry.coordinates[counter];
@@ -400,7 +409,7 @@ map.on('load', function () {
 
         // Request the next frame of animation so long the end has not been reached.
         if (counter < steps) {
-            sleep(1).then(function () {
+            sleep(planeTick).then(function () {
                 map.flyTo({ center: point.features[0].geometry.coordinates });
                 requestAnimationFrame(animate);
             });
