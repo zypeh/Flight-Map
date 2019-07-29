@@ -4,7 +4,7 @@ const urlParams = new URLSearchParams(window.location.search);
 var flightNo = urlParams.get('flight_no');
 var flightNo_str = urlParams.get('flight_no_str');
 
-var initDateTime = urlParams.get('init_dateTime');
+var initDateTime = parseInt(urlParams.get('init_dateTime'));
 var estDateTime = urlParams.get('est_dateTime');
 
 var origin_lng = parseFloat(urlParams.get('src_lng') + "");
@@ -240,15 +240,19 @@ route.features[0].geometry.coordinates = arc;
 
 // Used to increment the value of the point measurement against the route.
 var counter = 0;
-var delta = (estDateTime - initDateTime);
-var fligntDurationSecond = 3 * 60; // 3 minutes
-var stepPerSecond = steps / (delta / fligntDurationSecond);
-var planeTick = fligntDurationSecond * 1000 / steps;
+var flightDurationSecond = 3 * 60 * 1000; // 3 minutes
+var stepPerSecond = steps / flightDurationSecond;
+var planeTick = flightDurationSecond / steps;
 
-var timeNow = Date.now()
+var timeNow = Date.now() // millisec
 var flightHadFliedSecond = (timeNow > initDateTime) ? (timeNow - initDateTime) : 0;
 
-if (flightHadFliedSecond > 0 && flightHadFliedSecond < delta) {
+console.log("1", timeNow);
+
+console.log("2", initDateTime);
+console.log("3", flightHadFliedSecond)
+
+if (flightHadFliedSecond > 0 && flightHadFliedSecond < flightDurationSecond) {
     counter = parseInt(stepPerSecond * flightHadFliedSecond)
     point.features[0].geometry.coordinates = route.features[0].geometry.coordinates[counter];
     travelled_route.features[0].geometry.coordinates[1] = route.features[0].geometry.coordinates[counter];
@@ -259,7 +263,7 @@ if (flightHadFliedSecond > 0 && flightHadFliedSecond < delta) {
         zoom: 4,
         attributionControl: false,
     });
-} else if (flightHadFliedSecond >= delta) {
+} else if (flightHadFliedSecond >= flightDurationSecond) {
     counter = steps - 1 - 1; // this minus one is for the animate() function
     point.features[0].geometry.coordinates = route.features[0].geometry.coordinates[counter];
     travelled_route.features[0].geometry.coordinates[1] = route.features[0].geometry.coordinates[counter];
@@ -384,45 +388,46 @@ map.on('load', function () {
     });
 
     function animate() {
-        if (Date.now() < initDateTime) {
-            return
+        if (Date.now() > initDateTime) {
+            // Update point geometry to a new position based on counter denoting
+            // the index to access the arc.
+            point.features[0].geometry.coordinates = route.features[0].geometry.coordinates[counter];
+            travelled_route.features[0].geometry.coordinates[1] = route.features[0].geometry.coordinates[counter];
+
+            // Calculate the bearing to ensure the icon is rotated to match the route arc
+            // The bearing is calculate between the current point and the next point, except
+            // at the end of the arc use the previous point and the current point
+            point.features[0].properties.bearing = turf.bearing(
+                turf.point(route.features[0].geometry.coordinates[counter >= steps ? counter - 1 : counter]),
+                turf.point(route.features[0].geometry.coordinates[counter >= steps ? counter : counter + 1])
+            );
+
+            // Calculate the arc of the travelled route using the same function that generate the
+            // route.
+            var travelled_arc = [];
+            for (var i = 0; i < lineDistance; i += lineDistance / counter) {
+                var segment = turf.along(travelled_route.features[0], i, 'kilometers');
+                travelled_arc.push(segment.geometry.coordinates);
+            }
+
+            travelled_route.features[0].geometry.coordinates = travelled_arc;
+
+            // Update the source with this new data.
+            map.getSource('point').setData(point);
+            map.getSource('travelled_route').setData(travelled_route);
+
+            // Request the next frame of animation so long the end has not been reached.
+            if (counter < steps) {
+                sleep(planeTick).then(function () {
+                    map.flyTo({ center: point.features[0].geometry.coordinates });
+                    requestAnimationFrame(animate);
+                });
+            }
+
+            counter = counter + 1;
+        } else {
+            requestAnimationFrame(animate);
         }
-        // Update point geometry to a new position based on counter denoting
-        // the index to access the arc.
-        point.features[0].geometry.coordinates = route.features[0].geometry.coordinates[counter];
-        travelled_route.features[0].geometry.coordinates[1] = route.features[0].geometry.coordinates[counter];
-
-        // Calculate the bearing to ensure the icon is rotated to match the route arc
-        // The bearing is calculate between the current point and the next point, except
-        // at the end of the arc use the previous point and the current point
-        point.features[0].properties.bearing = turf.bearing(
-            turf.point(route.features[0].geometry.coordinates[counter >= steps ? counter - 1 : counter]),
-            turf.point(route.features[0].geometry.coordinates[counter >= steps ? counter : counter + 1])
-        );
-
-        // Calculate the arc of the travelled route using the same function that generate the
-        // route.
-        var travelled_arc = [];
-        for (var i = 0; i < lineDistance; i += lineDistance / counter) {
-            var segment = turf.along(travelled_route.features[0], i, 'kilometers');
-            travelled_arc.push(segment.geometry.coordinates);
-        }
-
-        travelled_route.features[0].geometry.coordinates = travelled_arc;
-
-        // Update the source with this new data.
-        map.getSource('point').setData(point);
-        map.getSource('travelled_route').setData(travelled_route);
-
-        // Request the next frame of animation so long the end has not been reached.
-        if (counter < steps) {
-            sleep(planeTick).then(function () {
-                map.flyTo({ center: point.features[0].geometry.coordinates });
-                requestAnimationFrame(animate);
-            });
-        }
-
-        counter = counter + 1;
     }
 
     // Start the animation.
