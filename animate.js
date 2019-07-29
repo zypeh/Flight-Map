@@ -2,6 +2,8 @@
 
 const urlParams = new URLSearchParams(window.location.search);
 var flightNo = urlParams.get('flight_no');
+var flightNo_str = urlParams.get('flight_no_str');
+
 var initDateTime = urlParams.get('init_dateTime');
 var estDateTime = urlParams.get('est_dateTime');
 
@@ -18,10 +20,13 @@ var destination_country = urlParams.get('dst_country');
 var destination_dateTime = urlParams.get('dst_time');
 
 var date = urlParams.get('date');
+var class_str = urlParams.get('class_str');
 var class_name = urlParams.get('class_name');
 
 if (!!flightNo)
     document.getElementById('flight-no').innerHTML = flightNo
+if (!!flightNo_str)
+    document.getElementById('flight-no-str').innerHTML = flightNo_str
 if (!!origin_name)
     document.getElementById('src-name').innerHTML = origin_name
 if (!!destination_name)
@@ -38,6 +43,8 @@ if (!!date)
     document.getElementById('date').innerHTML = date
 if (!!class_name)
     document.getElementById('class-name').innerHTML = class_name
+if (!!class_str)
+    document.getElementById('class-str').innerHTML = class_str
 
 var origin = [origin_lng, origin_lat];
 var destination = [destination_lng, destination_lat];
